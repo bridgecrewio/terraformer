@@ -16,7 +16,9 @@ run_terraformer(){
 	fi
 }
 
-aws s3 cp s3://${RESULT_BUCKET}/${CREDENTIALS_FILE_KEY} "./credentials.json"
+aws s3 cp s3://${RESULT_BUCKET}/${CREDENTIALS_FILE_KEY} credentials.json
+
+ls -la
 
 if [ "$CSP" == "GCP" ]; then
 	export GOOGLE_APPLICATION_CREDENTIALS="./credentials.json"
