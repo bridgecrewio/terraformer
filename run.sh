@@ -3,7 +3,7 @@
 GLOBAL_GCP_SERVICES=",dns,gcs,globalAddresses,globalForwardingRules,iam,"
 
 if [ "$CSP" == "GCP" ]; then
-    path="generated/google/"
+    path="generated/google"
 fi
 
 run_terraformer(){
@@ -26,7 +26,7 @@ aws s3 cp s3://${RESULT_BUCKET}/terraformer/${CUSTOMER_NAME}/${PROJECT_ID}/crede
 ls -la
 
 if [ "$CSP" == "GCP" ]; then
-	export GOOGLE_APPLICATION_CREDENTIALS="credentials.json"
+	export GOOGLE_APPLICATION_CREDENTIALS="./credentials.json"
 	services=$(./terraformer-google import google list --projects ${PROJECT_ID})
 else
 	services=$(./terraformer-azure import azure list)
