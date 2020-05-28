@@ -21,15 +21,17 @@ aws s3 cp s3://${RESULT_BUCKET}/terraformer/${CUSTOMER_NAME}/${PROJECT_ID}/crede
 ls -la
 
 if [ "$CSP" == "GCP" ]; then
-	export GOOGLE_APPLICATION_CREDENTIALS="./credentials.json"
+	export GOOGLE_APPLICATION_CREDENTIALS="credentials.json"
 	services=$(./terraformer-google import google list --projects ${PROJECT_ID})
 else
 	services=$(./terraformer-azure import azure list)
 fi
 
 for service in $services; do
-	run_terraformer $service
+	run_terraformer $service &
 done
+
+wait
 
 if [ "$CSP" == "GCP" ]; then
     path="generated/google/"
