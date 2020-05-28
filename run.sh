@@ -16,7 +16,7 @@ run_terraformer(){
 	fi
 }
 
-aws s3 cp s3://${RESULT_BUCKET}/${CREDENTIALS_FILE_KEY} credentials.json
+aws s3 cp s3://${RESULT_BUCKET}/terraformer/${CUSTOMER_NAME}/${PROJECT_ID}/credentials.json .
 
 ls -la
 
