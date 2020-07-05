@@ -16,16 +16,25 @@ package azure
 
 import (
 	"context"
+	"github.com/hashicorp/go-azure-helpers/authentication"
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-04-01/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
-	"github.com/hashicorp/go-azure-helpers/authentication"
 )
 
 type StorageAccountGenerator struct {
 	AzureService
+}
+
+func NewStorageAccountGenerator(subscriptionID string, authorizer autorest.Authorizer) *StorageAccountGenerator {
+	storageAccountGenerator := new(StorageAccountGenerator)
+	storageAccountGenerator.Args = map[string]interface{}{}
+	storageAccountGenerator.Args["config"] = authentication.Config{SubscriptionID: subscriptionID}
+	storageAccountGenerator.Args["authorizer"] = authorizer
+
+	return storageAccountGenerator
 }
 
 func (g StorageAccountGenerator) createResources(accountListResultIterator storage.AccountListResultIterator) []terraformutils.Resource {
@@ -46,15 +55,24 @@ func (g StorageAccountGenerator) createResources(accountListResultIterator stora
 	return resources
 }
 
-func (g *StorageAccountGenerator) InitResources() error {
+func (g *StorageAccountGenerator) GetStorageAccountsIterator() (storage.AccountListResultIterator, error) {
 	ctx := context.Background()
-	accountsClient := storage.NewAccountsClient(g.Args["config"].(authentication.Config).SubscriptionID)
+	accountsClient := storage.NewAccountsClient(g.GetSubscriptionID())
 
 	accountsClient.Authorizer = g.Args["authorizer"].(autorest.Authorizer)
-	output, err := accountsClient.ListComplete(ctx)
+	accountsIterator, err := accountsClient.ListComplete(ctx)
+
+	return accountsIterator, err
+}
+
+func (g *StorageAccountGenerator) InitResources() error {
+	accountsIterator, err := g.GetStorageAccountsIterator()
 	if err != nil {
 		return err
 	}
-	g.Resources = g.createResources(output)
+
+	storageAccounts := g.createResources(accountsIterator)
+	g.Resources = storageAccounts
+
 	return nil
 }
