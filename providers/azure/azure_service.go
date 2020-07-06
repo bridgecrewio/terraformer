@@ -15,9 +15,19 @@
 package azure
 
 import (
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
+	"github.com/hashicorp/go-azure-helpers/authentication"
 )
 
 type AzureService struct { //nolint
 	terraformutils.Service
+}
+
+func (s AzureService) GetSubscriptionID() string {
+	return s.Args["config"].(authentication.Config).SubscriptionID
+}
+
+func (s AzureService) GetAuthorizer() autorest.Authorizer {
+	return s.Args["authorizer"].(autorest.Authorizer)
 }
