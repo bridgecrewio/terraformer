@@ -65,6 +65,19 @@ func (g StorageBlobGenerator) ListBlobs(ctx context.Context, accountName, accoun
 		})
 }
 
+func (g StorageBlobGenerator) getBlobURL(ctx context.Context, accountName, accountGroupName, blobName string) {
+	key := g.getAccountPrimaryKey(ctx, accountName, accountGroupName)
+	c, _ := azblob.NewSharedKeyCredential(accountName, key)
+	p := azblob.NewPipeline(c, azblob.PipelineOptions{})
+	//{
+	//	Telemetry: azblob.TelemetryOptions{Value: config.UserAgent()},
+	//})
+	u, _ := url.Parse(fmt.Sprintf(blobFormatString, accountName))
+	service := azblob.NewBlobURL(*u, p)
+	service.URL()
+	return container
+}
+
 //
 func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, error) {
 	//var storageBlobs []terraformutils.Resource
@@ -118,14 +131,22 @@ func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, err
 				log.Println(err)
 			}
 
-			log.Printf("%v", blobList)
-
-			storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
-				*blobContainer.ID,
-				*blobContainer.Name,
-				"azurerm_storage_container",
-				"azurerm",
-				[]string{}))
+			blobItems := blobList.Segment.BlobItems
+			for _, item := range blobItems {
+				storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
+					fmt.Sprintf("%v/blobs/%v", blobContainer.ID, item.Name),
+					item.Name,
+					"azurerm_storage_blob",
+					"azurerm",
+					[]string{}))
+			}
+			//https://rotemsresourcegroupdiag.blob.core.windows.net/bootdiagnostics-rotemsvm-0dac2939-111b-4f4d-b5a8-4060fc1dadef/rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp
+			//storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
+			//	*blobContainer.ID,
+			//	*blobContainer.Name,
+			//	"azurerm_storage_container",
+			//	"azurerm",
+			//	[]string{}))
 
 			if err := blobsForGroupIterator.NextWithContext(ctx); err != nil {
 				log.Println(err)
