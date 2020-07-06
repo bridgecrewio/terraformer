@@ -15,7 +15,6 @@ func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, err
 	var storageBlobs []terraformutils.Resource
 	ctx := context.Background()
 	blobStorageClient := storage.NewBlobContainersClient(g.GetSubscriptionID())
-	blobStorageClient.SubscriptionID = g.GetSubscriptionID()
 	blobStorageClient.Authorizer = g.GetAuthorizer()
 
 	storageAccountGenerator := NewStorageAccountGenerator(g.GetSubscriptionID(), g.GetAuthorizer())
@@ -25,25 +24,29 @@ func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, err
 	}
 
 	for storageAccountsIterator.NotDone() {
-		account := storageAccountsIterator.Value()
-		resourceID, err := ParseAzureResourceID(*account.ID)
+		storageAccount := storageAccountsIterator.Value()
+		resourceID, err := ParseAzureResourceID(*storageAccount.ID)
 		if err != nil {
 			return storageBlobs, err
 		}
-		blobsForGroupIterator, err := blobStorageClient.ListComplete(ctx, resourceID.ResourceGroup, *account.Name, "", "")
+		blobsForGroupIterator, err := blobStorageClient.ListComplete(ctx, resourceID.ResourceGroup, *storageAccount.Name, "", "")
 		if err != nil {
 			return storageBlobs, err
 		}
 
-		blobsForGroup := blobsForGroupIterator.Values()
-
-		for _, blob := range blobsForGroup {
+		for blobsForGroupIterator.NotDone() {
+			blob := blobsForGroupIterator.Value()
 			storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
 				*blob.ID,
 				*blob.Name,
 				"azurerm_storage_blob",
 				g.ProviderName,
 				[]string{}))
+
+			if err := blobsForGroupIterator.NextWithContext(ctx); err != nil {
+				log.Println(err)
+				break
+			}
 		}
 
 		if err := storageAccountsIterator.NextWithContext(ctx); err != nil {
