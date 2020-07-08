@@ -8,6 +8,7 @@ import (
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
 	"log"
 	"net/url"
+	"strings"
 )
 
 const (
@@ -18,12 +19,10 @@ type StorageBlobGenerator struct {
 	AzureService
 }
 
-//
 func (g StorageBlobGenerator) getStorageAccountsClient() storage.AccountsClient {
 	storageAccountsClient := storage.NewAccountsClient(g.GetSubscriptionID())
 	storageAccountsClient.Authorizer = g.GetAuthorizer()
 
-	//storageAccountsClient.AddToUserAgent(config.UserAgent())
 	return storageAccountsClient
 }
 
@@ -69,13 +68,10 @@ func (g StorageBlobGenerator) getBlobURL(ctx context.Context, accountName, accou
 	key := g.getAccountPrimaryKey(ctx, accountName, accountGroupName)
 	c, _ := azblob.NewSharedKeyCredential(accountName, key)
 	p := azblob.NewPipeline(c, azblob.PipelineOptions{})
-	//{
-	//	Telemetry: azblob.TelemetryOptions{Value: config.UserAgent()},
-	//})
 	u, _ := url.Parse(fmt.Sprintf(blobFormatString, accountName))
 	service := azblob.NewBlobURL(*u, p)
 	service.URL()
-	return container
+	//return container
 }
 
 //
@@ -133,20 +129,29 @@ func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, err
 
 			blobItems := blobList.Segment.BlobItems
 			for _, item := range blobItems {
-				storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
-					fmt.Sprintf("%v/blobs/%v", blobContainer.ID, item.Name),
+				blobType := strings.Replace(string(item.Properties.BlobType), "Blob", "", -1)
+				storageBlobs = append(storageBlobs, terraformutils.NewResource(
+					"",
 					item.Name,
 					"azurerm_storage_blob",
 					"azurerm",
-					[]string{}))
+					map[string]string{
+						"storage_account_name":   terraformutils.TfSanitize(*storageAccount.Name),
+						"storage_container_name": terraformutils.TfSanitize(*blobContainer.Name),
+						"name":                   terraformutils.TfSanitize(item.Name),
+						"type":                   terraformutils.TfSanitize(blobType),
+					},
+					[]string{},
+					map[string]interface{}{}))
 			}
 			//https://rotemsresourcegroupdiag.blob.core.windows.net/bootdiagnostics-rotemsvm-0dac2939-111b-4f4d-b5a8-4060fc1dadef/rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp
+
 			//storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
-			//	*blobContainer.ID,
-			//	*blobContainer.Name,
-			//	"azurerm_storage_container",
-			//	"azurerm",
-			//	[]string{}))
+			//				*blobContainer.ID,
+			//				*blobContainer.Name,
+			//				"azurerm_storage_container",
+			//				"azurerm",
+			//				[]string{}))
 
 			if err := blobsForGroupIterator.NextWithContext(ctx); err != nil {
 				log.Println(err)
@@ -170,6 +175,17 @@ func (g *StorageBlobGenerator) InitResources() error {
 	}
 
 	g.Resources = append(g.Resources, resources...)
+
+	//g.Resources = append(g.Resources, terraformutils.NewSimpleResource(
+	//	//"",
+	//
+	//	"/subscriptions/21cc6592-328e-4607-850e-ad72ea73bb98/resourceGroups/rotems-resource-group/providers/Microsoft.Storage/storageAccounts/rotemsresourcegroupdiag/blobServices/default/containers/rotem",
+	//	//"/subscriptions/21cc6592-328e-4607-850e-ad72ea73bb98/resourceGroups/rotems-resource-group/providers/Microsoft.Storage/storageAccounts/rotemsresourcegroupdiag/blobServices/default/containers/bootdiagnostics-rotemsvm-0dac2939-111b-4f4d-b5a8-4060fc1dadef/blobs/rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp",
+	//	"storageAccounts_rotemsresourcegroupdiag_name/default/rotem",
+	//	//"rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp",
+	//	"azurerm_storage_container",
+	//	"azurerm",
+	//	[]string{}))
 
 	return nil
 }
