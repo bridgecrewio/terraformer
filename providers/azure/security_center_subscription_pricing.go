@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/hashicorp/go-azure-helpers/authentication"
 
