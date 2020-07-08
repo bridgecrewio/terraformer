@@ -3,58 +3,62 @@ package azure
 import (
 	"context"
 	"fmt"
+
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
+	"github.com/hashicorp/go-azure-helpers/authentication"
 	"log"
 	"net/url"
-	"strings"
 )
 
 const (
 	blobFormatString = `https://%s.blob.core.windows.net`
+	blobIDFormat     = `https://%s.blob.core.windows.net/%s/%s`
 )
 
 type StorageBlobGenerator struct {
 	AzureService
 }
 
-func (g StorageBlobGenerator) getStorageAccountsClient() storage.AccountsClient {
-	storageAccountsClient := storage.NewAccountsClient(g.GetSubscriptionID())
-	storageAccountsClient.Authorizer = g.GetAuthorizer()
-
-	return storageAccountsClient
-}
-
-func (g StorageBlobGenerator) getAccountKeys(ctx context.Context, accountName, accountGroupName string) (storage.AccountListKeysResult, error) {
-	accountsClient := g.getStorageAccountsClient()
-	return accountsClient.ListKeys(ctx, accountGroupName, accountName, "kerb")
-}
-
 func (g StorageBlobGenerator) getAccountPrimaryKey(ctx context.Context, accountName, accountGroupName string) string {
-	response, err := g.getAccountKeys(ctx, accountName, accountGroupName)
+	storageAccountsClient := storage.NewAccountsClient(g.Args["config"].(authentication.Config).SubscriptionID)
+	storageAccountsClient.Authorizer = g.Args["authorizer"].(autorest.Authorizer)
+
+	response, err := storageAccountsClient.ListKeys(ctx, accountGroupName, accountName, "kerb")
 	if err != nil {
 		log.Fatalf("failed to list keys: %v", err)
 	}
 	return *(((*response.Keys)[0]).Value)
 }
 
-func (g StorageBlobGenerator) getContainerURL(ctx context.Context, accountName, accountGroupName, containerName string) azblob.ContainerURL {
-	key := g.getAccountPrimaryKey(ctx, accountName, accountGroupName)
-	c, _ := azblob.NewSharedKeyCredential(accountName, key)
-	p := azblob.NewPipeline(c, azblob.PipelineOptions{})
-	//{
-	//	Telemetry: azblob.TelemetryOptions{Value: config.UserAgent()},
-	//})
-	u, _ := url.Parse(fmt.Sprintf(blobFormatString, accountName))
-	service := azblob.NewServiceURL(*u, p)
-	container := service.NewContainerURL(containerName)
-	return container
+func (g StorageBlobGenerator) getContainerURL(ctx context.Context, accountName, accountGroupName, containerName string) (azblob.ContainerURL, error) {
+	accountPrimaryKey := g.getAccountPrimaryKey(ctx, accountName, accountGroupName)
+	sharedKeyCredential, err := azblob.NewSharedKeyCredential(accountName, accountPrimaryKey)
+	if err != nil {
+		return azblob.ContainerURL{}, err
+	}
+
+	p := azblob.NewPipeline(sharedKeyCredential, azblob.PipelineOptions{})
+	accountURL, err := url.Parse(fmt.Sprintf(blobFormatString, accountName))
+	if err != nil {
+		return azblob.ContainerURL{}, err
+	}
+
+	serviceURL := azblob.NewServiceURL(*accountURL, p)
+	containerURL := serviceURL.NewContainerURL(containerName)
+
+	return containerURL, nil
 }
 
-func (g StorageBlobGenerator) ListBlobs(ctx context.Context, accountName, accountGroupName, containerName string) (*azblob.ListBlobsFlatSegmentResponse, error) {
-	c := g.getContainerURL(ctx, accountName, accountGroupName, containerName)
-	return c.ListBlobsFlatSegment(
+func (g StorageBlobGenerator) getBlobsFromContainer(ctx context.Context, accountName, accountGroupName, containerName string) ([]azblob.BlobItem, error) {
+	containerURL, err := g.getContainerURL(ctx, accountName, accountGroupName, containerName)
+	if err != nil {
+		return nil, err
+	}
+
+	blobListResponse, err := containerURL.ListBlobsFlatSegment(
 		ctx,
 		azblob.Marker{},
 		azblob.ListBlobsSegmentOptions{
@@ -62,110 +66,48 @@ func (g StorageBlobGenerator) ListBlobs(ctx context.Context, accountName, accoun
 				Snapshots: true,
 			},
 		})
-}
-
-func (g StorageBlobGenerator) getBlobURL(ctx context.Context, accountName, accountGroupName, blobName string) {
-	key := g.getAccountPrimaryKey(ctx, accountName, accountGroupName)
-	c, _ := azblob.NewSharedKeyCredential(accountName, key)
-	p := azblob.NewPipeline(c, azblob.PipelineOptions{})
-	u, _ := url.Parse(fmt.Sprintf(blobFormatString, accountName))
-	service := azblob.NewBlobURL(*u, p)
-	service.URL()
-	//return container
-}
-
-//
-func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, error) {
-	//var storageBlobs []terraformutils.Resource
-	//ctx := context.Background()
-	//storageAccountClient := g.getStorageAccountsClient()
-	//accountListResult, err := storageAccountClient.List(ctx)
-	//if err != nil {
-	//	return storageBlobs, err
-	//}
-
-	//for _, storageAccount := range *accountListResult.Value {
-	//	accountID := *storageAccount.ID
-	//	parsedAccountID, err := ParseAzureResourceID(accountID)
-	//
-	//	blobList := g.ListBlobs(ctx, *storageAccount.Name, parsedAccountID.ResourceGroup)
-	//}
-
-	var storageBlobs []terraformutils.Resource
-	ctx := context.Background()
-	blobContainersClient := storage.NewBlobContainersClient(g.GetSubscriptionID())
-	blobContainersClient.Authorizer = g.GetAuthorizer()
-
-	storageAccountGenerator := NewStorageAccountGenerator(g.GetSubscriptionID(), g.GetAuthorizer())
-	storageAccountsIterator, err := storageAccountGenerator.GetStorageAccountsIterator()
 	if err != nil {
-		return storageBlobs, err
+		return nil, err
 	}
 
-	for storageAccountsIterator.NotDone() {
-		storageAccount := storageAccountsIterator.Value()
-		resourceID, err := ParseAzureResourceID(*storageAccount.ID)
+	return blobListResponse.Segment.BlobItems, nil
+}
+
+func (g StorageBlobGenerator) listStorageBlobs() ([]terraformutils.Resource, error) {
+	var storageBlobsResources []terraformutils.Resource
+	ctx := context.Background()
+
+	blobContainerGenerator := NewStorageContainerGenerator(g.Args["config"].(authentication.Config).SubscriptionID, g.Args["authorizer"].(autorest.Authorizer))
+	blobContainersResources, err := blobContainerGenerator.ListBlobContainers()
+	if err != nil {
+		return storageBlobsResources, err
+	}
+
+	for _, blobContainerResource := range blobContainersResources {
+		containerID := blobContainerResource.InstanceState.ID
+		parsedContainerID, err := ParseAzureResourceID(containerID)
 		if err != nil {
-			return storageBlobs, err
+			return storageBlobsResources, err
 		}
-		blobsForGroupIterator, err := blobContainersClient.ListComplete(ctx, resourceID.ResourceGroup, *storageAccount.Name, "", "")
+
+		storageAccountName := blobContainerResource.InstanceState.Attributes["storage_account_name"]
+		containerName := blobContainerResource.InstanceState.Attributes["name"]
+		blobsList, err := g.getBlobsFromContainer(ctx, storageAccountName, parsedContainerID.ResourceGroup, containerName)
 		if err != nil {
-			return storageBlobs, err
+			return storageBlobsResources, err
 		}
 
-		for blobsForGroupIterator.NotDone() {
-			blobContainer := blobsForGroupIterator.Value()
-			//containerDetails, err := blobContainersClient.Get(ctx, resourceID.ResourceGroup, *storageAccount.Name, *blobContainer.Name)
-			//
-			//if err != nil {
-			//	log.Println(err)
-			//}
-
-			blobList, err := g.ListBlobs(ctx, *storageAccount.Name, resourceID.ResourceGroup, *blobContainer.Name)
-
-			if err != nil {
-				log.Println(err)
-			}
-
-			blobItems := blobList.Segment.BlobItems
-			for _, item := range blobItems {
-				blobType := strings.Replace(string(item.Properties.BlobType), "Blob", "", -1)
-				storageBlobs = append(storageBlobs, terraformutils.NewResource(
-					"",
-					item.Name,
-					"azurerm_storage_blob",
-					"azurerm",
-					map[string]string{
-						"storage_account_name":   terraformutils.TfSanitize(*storageAccount.Name),
-						"storage_container_name": terraformutils.TfSanitize(*blobContainer.Name),
-						"name":                   terraformutils.TfSanitize(item.Name),
-						"type":                   terraformutils.TfSanitize(blobType),
-					},
-					[]string{},
-					map[string]interface{}{}))
-			}
-			//https://rotemsresourcegroupdiag.blob.core.windows.net/bootdiagnostics-rotemsvm-0dac2939-111b-4f4d-b5a8-4060fc1dadef/rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp
-
-			//storageBlobs = append(storageBlobs, terraformutils.NewSimpleResource(
-			//				*blobContainer.ID,
-			//				*blobContainer.Name,
-			//				"azurerm_storage_container",
-			//				"azurerm",
-			//				[]string{}))
-
-			if err := blobsForGroupIterator.NextWithContext(ctx); err != nil {
-				log.Println(err)
-				break
-			}
-		}
-
-		if err := storageAccountsIterator.NextWithContext(ctx); err != nil {
-			log.Println(err)
-			break
+		for _, blobItem := range blobsList {
+			storageBlobsResources = append(storageBlobsResources, terraformutils.NewSimpleResource(
+				fmt.Sprintf(blobIDFormat, storageAccountName, containerName, blobItem.Name),
+				blobItem.Name,
+				"azurerm_storage_blob",
+				"azurerm",
+				[]string{}))
 		}
 	}
 
-	return storageBlobs, nil
+	return storageBlobsResources, err
 }
 
 func (g *StorageBlobGenerator) InitResources() error {
@@ -175,17 +117,6 @@ func (g *StorageBlobGenerator) InitResources() error {
 	}
 
 	g.Resources = append(g.Resources, resources...)
-
-	//g.Resources = append(g.Resources, terraformutils.NewSimpleResource(
-	//	//"",
-	//
-	//	"/subscriptions/21cc6592-328e-4607-850e-ad72ea73bb98/resourceGroups/rotems-resource-group/providers/Microsoft.Storage/storageAccounts/rotemsresourcegroupdiag/blobServices/default/containers/rotem",
-	//	//"/subscriptions/21cc6592-328e-4607-850e-ad72ea73bb98/resourceGroups/rotems-resource-group/providers/Microsoft.Storage/storageAccounts/rotemsresourcegroupdiag/blobServices/default/containers/bootdiagnostics-rotemsvm-0dac2939-111b-4f4d-b5a8-4060fc1dadef/blobs/rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp",
-	//	"storageAccounts_rotemsresourcegroupdiag_name/default/rotem",
-	//	//"rotems-vm.0dac2939-111b-4f4d-b5a8-4060fc1dadef.screenshot.bmp",
-	//	"azurerm_storage_container",
-	//	"azurerm",
-	//	[]string{}))
 
 	return nil
 }
