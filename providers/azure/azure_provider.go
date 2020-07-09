@@ -135,6 +135,8 @@ func (p *AzureProvider) GetSupportedService() map[string]terraformutils.ServiceG
 		"network_interface":      &NetworkInterfaceGenerator{},
 		"network_security_group": &NetworkSecurityGroupGenerator{},
 		"resource_group":         &ResourceGroupGenerator{},
+		"security_center_contact":              &SecurityCenterContactGenerator{},
+		"security_center_subscription_pricing": &SecurityCenterSubscriptionPricingGenerator{},
 		"storage_account":        &StorageAccountGenerator{},
 		"storage_container":      &StorageContainerGenerator{},
 		"storage_blob":           &StorageBlobGenerator{},
