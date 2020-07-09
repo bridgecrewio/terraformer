@@ -2,11 +2,16 @@ package azure
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-04-01/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
 	"github.com/hashicorp/go-azure-helpers/authentication"
+)
+
+const (
+	containerIDFormat = "https://%s.blob.core.windows.net/%s"
 )
 
 type StorageContainerGenerator struct {
@@ -48,7 +53,7 @@ func (g StorageContainerGenerator) ListBlobContainers() ([]terraformutils.Resour
 			containerItem := containerItemsIterator.Value()
 			containerResources = append(containerResources,
 				terraformutils.NewResource(
-					*containerItem.ID,
+					fmt.Sprintf(containerIDFormat, *storageAccount.Name, *containerItem.Name),
 					*containerItem.Name,
 					"azurerm_storage_container",
 					"azurerm",
