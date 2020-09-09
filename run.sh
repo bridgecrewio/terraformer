@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GLOBAL_GCP_SERVICES=",dns,gcs,globalAddresses,globalForwardingRules,iam,gke,backendServices,bigQuery,disks,firewall,healthChecks,httpHealthChecks,instanceTemplates,networks,project,routes,targetHttpsProxies,urlMaps,"
-GLOBAL_AWS_SERVICES=",sts,iam,route53,route53domains,s3,s3control,cloudfront,accessanalyzer,organizations,"
+GLOBAL_AWS_SERVICES=",sts,iam,route53,route53domains,cloudfront,accessanalyzer,organizations,"
 
 case $CSP in
 	"GCP")
@@ -38,8 +38,6 @@ run_terraformer(){
 			if [[ "$GLOBAL_AWS_SERVICES" =~ .*",$1,".* ]]; then
 				#	To be inline with the above regex, GLOBAL_GCP_SERVICES must start and end with a ","
 				regions="global"
-			elif [[ $1 == "s3,s3control" ]]; then
-			  regions="us-east-1"
 			elif [[ $1 == "eks" ]]; then
 			  regions="us-east-1,us-east-2,us-west-2,ap-south-1,ap-southeast-1,ap-southeast-2,ap-northeast-1,ap-northeast-2,ca-central-1,eu-central-1,eu-west-1,eu-west-2,eu-west-3,eu-north-1,sa-east-1"
 			else
@@ -80,7 +78,8 @@ credential_source = EcsContainer
 role_arn = ${CUSTOMER_ARN_ROLE}
 external_id = ${EXTERNAL_ID}
 AWS_CREDS
-		services="vpc,sg,nacl,nat,igw,vpc_peering,vpn_connection,vpn_gateway,transit_gateway,subnet,eni,ec2_instance,eip,route_table,customer_gateway,ebs alb,elb,auto_scaling codebuild,codecommit eks sts,iam,route53,route53domains,cloudfront,accessanalyzer ecr,ecs,acm,cognito s3,s3control es,cloud9,kinesis,firehose,elasticache,elastic_beanstalk lambda,kms,dynamodb,rds,secretsmanager sns,sqs,sfn,securityhub cloud9,swf,xray cloudtrail,config cloudformation"
+
+		services="vpc,sg,nacl,nat,igw,vpc_peering,vpn_connection,vpn_gateway,transit_gateway,subnet,eni,ec2_instance,eip,route_table,customer_gateway,ebs alb,elb,auto_scaling codecommit eks sts,iam,route53,route53domains,cloudfront,accessanalyzer ecr,ecs,acm,cognito s3 es,cloud9,kinesis,firehose,elasticache,elastic_beanstalk lambda,kms,dynamodb,rds,secretsmanager sns,sqs,sfn,securityhub cloud9,swf,xray cloudtrail,config cloudformation"
 		;;
 	*)
 		echo "$CSP isn't supported"
