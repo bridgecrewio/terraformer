@@ -33,7 +33,6 @@ func (g AppServiceGenerator) listApps() ([]terraformutils.Resource, error) {
 			"azurerm_app_service",
 			g.ProviderName,
 			[]string{}))
-
 		if err := appsIterator.NextWithContext(ctx); err != nil {
 			log.Println(err)
 			return resources, err
