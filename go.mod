@@ -13,7 +13,7 @@ require (
 	github.com/OctopusDeploy/go-octopusdeploy v1.6.0
 	github.com/aliyun/alibaba-cloud-sdk-go v1.60.295
 	github.com/aliyun/aliyun-tablestore-go-sdk v4.1.2+incompatible
-	github.com/aws/aws-sdk-go v1.30.19
+	github.com/aws/aws-sdk-go v1.35.34
 	github.com/aws/aws-sdk-go-v2 v0.24.0
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cloudflare/cloudflare-go v0.13.5
@@ -31,7 +31,7 @@ require (
 	github.com/hashicorp/terraform v0.12.29
 	github.com/heroku/heroku-go/v5 v5.1.0
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
-	github.com/jmespath/go-jmespath v0.3.0
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/jonboydell/logzio_client v1.2.0
 	github.com/labd/commercetools-go-sdk v0.0.0-20200309143931-ca72e918a79d
 	github.com/linode/linodego v0.15.0
