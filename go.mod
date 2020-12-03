@@ -31,7 +31,7 @@ require (
 	github.com/hashicorp/terraform v0.12.29
 	github.com/heroku/heroku-go/v5 v5.1.0
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
-	github.com/jmespath/go-jmespath v0.3.0
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/jonboydell/logzio_client v1.2.0
 	github.com/labd/commercetools-go-sdk v0.0.0-20200309143931-ca72e918a79d
 	github.com/linode/linodego v0.24.0
