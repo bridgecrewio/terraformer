@@ -49,7 +49,7 @@ require (
 	github.com/zorkian/go-datadog-api v2.30.0+incompatible
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	golang.org/x/text v0.3.4
-	gonum.org/v1/gonum v0.7.0
+	gonum.org/v1/gonum v0.8.2
 	google.golang.org/api v0.35.0
 	google.golang.org/genproto v0.0.0-20201106154455-f9bfe239b0ba
 	gopkg.in/jarcoal/httpmock.v1 v1.0.0-00010101000000-000000000000 // indirect
