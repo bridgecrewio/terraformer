@@ -39,8 +39,7 @@ require (
 	github.com/ns1/ns1-go v2.4.0+incompatible
 	github.com/paultyng/go-newrelic/v4 v4.10.0
 	github.com/pkg/errors v0.9.1
-	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/vultr/govultr v0.5.0
 	github.com/yandex-cloud/go-genproto v0.0.0-20200722140432-762fe965ce77
