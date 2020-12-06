@@ -59,3 +59,4 @@ require (
 )
 
 replace gopkg.in/jarcoal/httpmock.v1 => github.com/jarcoal/httpmock v1.0.5
+replace github.com/hashicorp/terraform => github.com/bridgecrewio/terraform v0.12.29
