@@ -9,7 +9,7 @@ require (
 	github.com/Azure/azure-sdk-for-go v42.0.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.10.0
 	github.com/Azure/go-autorest/autorest v0.11.12
-	github.com/DataDog/datadog-api-client-go v1.0.0-beta.9
+	github.com/DataDog/datadog-api-client-go v1.0.0-beta.12
 	github.com/OctopusDeploy/go-octopusdeploy v1.6.0
 	github.com/aliyun/alibaba-cloud-sdk-go v1.60.295
 	github.com/aliyun/aliyun-tablestore-go-sdk v4.1.2+incompatible
