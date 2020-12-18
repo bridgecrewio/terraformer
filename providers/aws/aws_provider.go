@@ -270,6 +270,7 @@ func (p *AWSProvider) GetSupportedService() map[string]terraformutils.ServiceGen
 		"kinesis":           &AwsFacade{service: &KinesisGenerator{}},
 		"kms":               &AwsFacade{service: &KmsGenerator{}},
 		"lambda":            &AwsFacade{service: &LambdaGenerator{}},
+		"cloudwatchlogs":	 &AwsFacade{service: &CloudWatchLogsGenerator{}},
 		"media_package":     &AwsFacade{service: &MediaPackageGenerator{}},
 		"media_store":       &AwsFacade{service: &MediaStoreGenerator{}},
 		"msk":               &AwsFacade{service: &MskGenerator{}},
