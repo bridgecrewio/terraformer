@@ -30,7 +30,6 @@ type CloudWatchLogsGenerator struct {
 
 func (g *CloudWatchLogsGenerator) createResources(config aws.Config, logGroups *cloudwatchlogs.DescribeLogGroupsResponse, region string) []terraformutils.Resource {
 	resources := []terraformutils.Resource{}
-	//svc := cloudwatchlogs.New(config)
 	for _, logGroup := range logGroups.LogGroups {
 		resourceName := aws.StringValue(logGroup.LogGroupName)
 

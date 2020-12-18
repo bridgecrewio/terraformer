@@ -239,7 +239,7 @@ func (p *AWSProvider) GetSupportedService() map[string]terraformutils.ServiceGen
 		"cloudfront":        &AwsFacade{service: &CloudFrontGenerator{}},
 		"cloudtrail":        &AwsFacade{service: &CloudTrailGenerator{}},
 		"cloudwatch":        &AwsFacade{service: &CloudWatchGenerator{}},
-		"cloudwatchlogs":	 &AwsFacade{service: &CloudWatchLogsGenerator{}},
+		"cloudwatchlogs":    &AwsFacade{service: &CloudWatchLogsGenerator{}},
 		"codebuild":         &AwsFacade{service: &CodeBuildGenerator{}},
 		"codecommit":        &AwsFacade{service: &CodeCommitGenerator{}},
 		"codedeploy":        &AwsFacade{service: &CodeDeployGenerator{}},
