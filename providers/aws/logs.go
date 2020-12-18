@@ -16,10 +16,11 @@ package aws
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
-	"strconv"
 )
 
 var logsAllowEmptyValues = []string{"tags."}
@@ -28,7 +29,7 @@ type LogsGenerator struct {
 	AWSService
 }
 
-func (g *LogsGenerator) createResources(config aws.Config, logGroups *cloudwatchlogs.DescribeLogGroupsResponse, region string) []terraformutils.Resource {
+func (g *LogsGenerator) createResources(logGroups *cloudwatchlogs.DescribeLogGroupsResponse) []terraformutils.Resource {
 	resources := []terraformutils.Resource{}
 	for _, logGroup := range logGroups.LogGroups {
 		resourceName := aws.StringValue(logGroup.LogGroupName)
@@ -67,7 +68,7 @@ func (g *LogsGenerator) InitResources() error {
 	if err != nil {
 		return err
 	}
-	g.Resources = g.createResources(config, logGroups, g.GetArgs()["region"].(string))
+	g.Resources = g.createResources(logGroups)
 	return nil
 }
 
