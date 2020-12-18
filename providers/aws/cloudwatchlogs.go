@@ -22,13 +22,13 @@ import (
 	"strconv"
 )
 
-var CloudWatchLogsAllowEmptyValues = []string{"tags.", "retention_in_days"}
+var logsAllowEmptyValues = []string{"tags."}
 
-type CloudWatchLogsGenerator struct {
+type LogsGenerator struct {
 	AWSService
 }
 
-func (g *CloudWatchLogsGenerator) createResources(config aws.Config, logGroups *cloudwatchlogs.DescribeLogGroupsResponse, region string) []terraformutils.Resource {
+func (g *LogsGenerator) createResources(config aws.Config, logGroups *cloudwatchlogs.DescribeLogGroupsResponse, region string) []terraformutils.Resource {
 	resources := []terraformutils.Resource{}
 	for _, logGroup := range logGroups.LogGroups {
 		resourceName := aws.StringValue(logGroup.LogGroupName)
@@ -49,14 +49,14 @@ func (g *CloudWatchLogsGenerator) createResources(config aws.Config, logGroups *
 			"aws_cloudwatch_log_group",
 			"aws",
 			attributes,
-			CloudWatchLogsAllowEmptyValues,
+			logsAllowEmptyValues,
 			map[string]interface{}{}))
 	}
 	return resources
 }
 
 // Generate TerraformResources from AWS API
-func (g *CloudWatchLogsGenerator) InitResources() error {
+func (g *LogsGenerator) InitResources() error {
 	config, e := g.generateConfig()
 	if e != nil {
 		return e
@@ -72,7 +72,7 @@ func (g *CloudWatchLogsGenerator) InitResources() error {
 }
 
 // remove retention_in_days if it is 0 (it gets added by the "refresh" stage)
-func (g *CloudWatchLogsGenerator) PostConvertHook() error {
+func (g *LogsGenerator) PostConvertHook() error {
 	for _, resource := range g.Resources {
 		if resource.Item["retention_in_days"] == "0" {
 			delete(resource.Item, "retention_in_days")
