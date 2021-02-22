@@ -30,6 +30,7 @@ A CLI tool that generates `tf`/`json` and `tfstate` files based on existing infr
         * [Linode](#use-with-linode)
         * [NS1](#use-with-ns1)
         * [OpenStack](#use-with-openstack)
+        * [TencentCloud](#use-with-tencentcloud)
         * [Vultr](#use-with-vultr)
         * [Yandex.Cloud](#use-with-yandex)
     * Infrastructure Software
@@ -128,6 +129,28 @@ terraformer import aws --resources=vpc,subnet --filter=vpc=myvpcid --regions=eu-
 ```
 Will only import the vpc with id `myvpcid`. This form of filters can help when it's necessary to select resources by its identifiers.
 
+##### Field name only
+
+It is possible to filter by specific field name only. It can be used e.g. when you want to retrieve resources only with a specific tag key.
+
+Example usage:
+
+```
+terraformer import aws --resources=s3 --filter="Name=tags.Abc" --regions=eu-west-1
+```
+Will only import the s3 resources that have tag `Abc`. This form of filters can help when the field values are not important from filtering perspective.
+
+##### Field with dots
+
+It is possible to filter by a field that contains a dot.
+
+Example usage:
+
+```
+terraformer import aws --resources=s3 --filter="Name=tags.Abc.def" --regions=eu-west-1
+```
+Will only import the s3 resources that have tag `Abc.def`.
+
 #### Planning
 
 The `plan` command generates a planfile that contains all the resources set to be imported. By modifying the planfile before running the `import` command, you can rename or filter the resources you'd like to import.
@@ -221,6 +244,7 @@ Links to download Terraform Providers:
     * Linode provider >1.8.0 - [here](https://releases.hashicorp.com/terraform-provider-linode/)
     * NS1 provider >1.8.3 - [here](https://releases.hashicorp.com/terraform-provider-ns1/)
     * OpenStack provider >1.21.1 - [here](https://releases.hashicorp.com/terraform-provider-openstack/)
+    * TencentCloud provider >1.50.0 - [here](https://releases.hashicorp.com/terraform-provider-tencentcloud/)
     * Vultr provider >1.0.5 - [here](https://releases.hashicorp.com/terraform-provider-vultr/)
     * Yandex provider >0.42.0 - [here](https://releases.hashicorp.com/terraform-provider-yandex/)
 * Infrastructure Software
@@ -916,6 +940,7 @@ If you want to run Terraformer with the IBM Cloud provider plugin on your system
     export IC_API_KEY=<IBMCLOUD_API_KEY>
     export IC_REGION=<IBMCLOUD_REGION>
     terraformer import ibm --resources=ibm_is_vpc --resource_group=a0d5213d831a454ebace7ed38ca9c8ca
+    terraformer import ibm --resources=ibm_function --region=us-south
     ```
 List of supported IBM Cloud resources:
 
@@ -948,23 +973,58 @@ List of supported IBM Cloud resources:
     * `ibm_is_instance_group`
     * `ibm_is_instance_group_manager`
     * `ibm_is_instance_group_manager_policy`
-*   `ibm_is_vpc`
-    * `ibm_is_vpc`
-    * `ibm_is_vpc_address_prefix`
-    * `ibm_is_vpc_route`
-*   `ibm_is_subnet`
-*   `ibm_is_instance`
-*   `ibm_is_security_group`
-    * `ibm_is_security_group_rule` 
 *   `ibm_cis`
     * `ibm_cis`
     * `ibm_cis_dns_record`
     * `ibm_cis_firewall`
     * `ibm_cis_domain_settings`
     * `ibm_cis_global_load_balancer`
-    * `ibm_cis_origin_pool`
+    * `ibm_cis_edge_functions_action`
+    * `ibm_cis_edge_functions_trigger`
     * `ibm_cis_healthcheck`
-    * `ibm_cis_rate_limit`     
+    * `ibm_cis_rate_limit` 
+*   `ibm_is_vpc`
+    * `ibm_is_vpc`
+    * `ibm_is_vpc_address_prefix`
+    * `ibm_is_vpc_route`
+    * `ibm_is_vpc_routing_table`
+    * `ibm_is_vpc_routing_table_route`
+*   `ibm_is_subnet`
+*   `ibm_is_instance`
+*   `ibm_is_security_group`
+    * `ibm_is_security_group_rule`
+*   `ibm_is_network_acl`
+*   `ibm_is_public_gateway`
+*   `ibm_is_volume`
+*   `ibm_is_vpn_gateway`
+    * `ibm_is_vpn_gateway_connections`
+*   `ibm_is_lb`
+    * `ibm_is_lb_pool`
+    * `ibm_is_lb_pool_member`
+    * `ibm_is_lb_listener`
+    * `ibm_is_lb_listener_policy`
+    * `ibm_is_lb_listener_policy_rule`
+*   `ibm_is_floating_ip`
+*   `ibm_is_flow_log`
+*   `ibm_is_ike_policy`
+*   `ibm_is_image`
+*   `ibm_is_instance_template`
+*   `ibm_is_ipsec_policy`
+*   `ibm_is_ssh_key`
+*   `ibm_function`
+    * `ibm_function_package`
+    * `ibm_function_action`
+    * `ibm_function_rule`
+    * `ibm_function_trigger`
+* `ibm_private_dns`
+    * `ibm_resource_instance`
+    * `ibm_dns_zone`
+    * `ibm_dns_resource_record`
+    * `ibm_dns_permitted_network`
+    * `ibm_dns_glb_monitor`
+    * `ibm_dns_glb_pool`
+    * `ibm_dns_glb`
+ 
 
 ### Use with DigitalOcean
 
@@ -1150,6 +1210,62 @@ List of supported OpenStack services:
 *   `networking`
     * `openstack_networking_secgroup_v2`
     * `openstack_networking_secgroup_rule_v2`
+
+### Use with TencentCloud
+
+Example:
+
+```
+$ export TENCENTCLOUD_SECRET_ID=<SECRET_ID>
+$ export TENCENTCLOUD_SECRET_KEY=<SECRET_KEY>
+$ terraformer import tencentcloud --resources=cvm,cbs --regions=ap-guangzhou
+```
+
+List of supported TencentCloud services:
+
+*    `as`
+     * `tencentcloud_as_scaling_group`
+     * `tencentcloud_as_scaling_config`
+*    `cbs`
+     * `tencentcloud_cbs_storage`
+*    `cdn`
+     * `tencentcloud_cdn_domain`
+*    `cfs`
+     * `tencentcloud_cfs_file_system`
+*    `clb`
+     * `tencentcloud_clb_instance`
+*    `cos`
+     * `tencentcloud_cos_bucket`
+*    `cvm`
+     * `tencentcloud_instance`
+*    `elasticsearch`
+     * `tencentcloud_elasticsearch_instance`
+*    `gaap`
+     * `tencentcloud_gaap_proxy`
+     * `tencentcloud_gaap_realserver`
+*    `key_pair`
+     * `tencentcloud_key_pair`
+*    `mongodb`
+     * `tencentcloud_mongodb_instance`
+*    `mysql`
+     * `tencentcloud_mysql_instance`
+     * `tencentcloud_mysql_readonly_instance`
+*    `redis`
+     * `tencentcloud_redis_instance`
+*    `scf`
+     * `tencentcloud_scf_function`
+*    `security_group`
+     * `tencentcloud_security_group`
+*    `ssl`
+     * `tencentcloud_ssl_certificate`
+*    `subnet`
+     * `tencentcloud_subnet`
+*    `tcaplus`
+     * `tencentcloud_tcaplus_cluster`
+*    `vpc`
+     * `tencentcloud_vpc`
+*    `vpc`
+     * `tencentcloud_vpn_gateway`
 
 ### Use with Vultr
 
@@ -1408,14 +1524,59 @@ List of supported Datadog services:
 
 *   `dashboard`
     * `datadog_dashboard`
+*   `dashboard_list`
+    * `datadog_dashboard_list`
 *   `downtime`
     * `datadog_downtime`
+*   `logs_archive`
+    * `datadog_logs_archive`
+*   `logs_archive_order`
+    * `datadog_logs_archive_order`
+*   `logs_custom_pipeline`
+    * `datadog_logs_custom_pipeline`
+*   `logs_integration_pipeline`
+    * `datadog_logs_integration_pipeline`
+*   `logs_pipeline_order`
+    * `datadog_logs_pipeline_order`
+*   `logs_index`
+    * `datadog_logs_index`
+*   `logs_index_order`
+    * `datadog_logs_index_order`
+*   `integration_aws`
+    * `datadog_integration_aws`
+*   `integration_aws_lambda_arn`
+    * `datadog_integration_aws_lambda_arn`
+*   `integration_aws_log_collection`
+    * `datadog_integration_aws_log_collection`
+*   `integration_azure`
+    * `datadog_integration_azure`
+        * **_NOTE:_** Sensitive field `client_secret` is not generated and needs to be manually set
+*   `integration_gcp`
+    * `datadog_integration_gcp`
+        * **_NOTE:_** Sensitive fields `private_key, private_key_id, client_id` is not generated and needs to be manually set
+*   `metric_metadata`
+    * `datadog_metric_metadata`
+        * **_NOTE:_** Importing resource requires resource ID's to be passed via [Filter](#filtering) option
 *   `monitor`
     * `datadog_monitor`
+*   `role`
+    * `datadog_role`
 *   `screenboard`
     * `datadog_screenboard`
+*   `security_monitoring_default_rule`
+    * `datadog_security_monitoring_default_rule`
+*   `security_monitoring_rule`
+    * `datadog_security_monitoring_rule`
+*   `service_level_objective`
+    * `datadog_service_level_objective`
+        * **_NOTE:_** Importing resource requires resource ID's to be passed via [Filter](#filtering) option
 *   `synthetics`
     * `datadog_synthetics_test`
+*   `synthetics_global_variables`
+    * `datadog_synthetics_global_variables`
+        * **_NOTE:_** Importing resource requires resource ID's to be passed via [Filter](#filtering) option
+*   `synthetics_private_location`
+    * `datadog_synthetics_private_location`
 *   `timeboard`
     * `datadog_timeboard`
 *   `user`

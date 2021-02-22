@@ -23,6 +23,7 @@ import (
 	"github.com/IBM/vpc-go-sdk/vpcv1"
 )
 
+// SubnetGenerator ...
 type SubnetGenerator struct {
 	IBMService
 }
@@ -38,6 +39,7 @@ func (g SubnetGenerator) createSubnetResources(subnetID, subnetName string) terr
 	return resources
 }
 
+// InitResources ...
 func (g *SubnetGenerator) InitResources() error {
 	var resoureGroup string
 	region := envFallBack([]string{"IC_REGION"}, "us-south")
